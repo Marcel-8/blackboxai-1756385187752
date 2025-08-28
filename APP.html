@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartStudy - Course Notes & Quiz App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .note-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .note-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .quiz-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .quiz-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+        }
+        
+        .main-content {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .quiz-option {
+            transition: all 0.3s ease;
+        }
+        
+        .quiz-option:hover {
+            background: rgba(116, 185, 255, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .quiz-option.selected {
+            background: rgba(116, 185, 255, 0.4);
+            border-color: #74b9ff;
+        }
+        
+        .quiz-option.correct {
+            background: rgba(0, 184, 148, 0.3);
+            border-color: #00b894;
+        }
+        
+        .quiz-option.incorrect {
+            background: rgba(231, 76, 60, 0.3);
+            border-color: #e74c3c;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <header class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">SmartStudy</h1>
+                </div>
+                <nav class="hidden md:flex space-x-6">
+                    <button onclick="showSection('dashboard')" class="nav-btn px-4 py-2 rounded-lg font-medium transition-colors bg-blue-500 text-white">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </button>
+                    <button onclick="showSection('notes')" class="nav-btn px-4 py-2 rounded-lg font-medium transition-colors text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-sticky-note mr-2"></i>Notes
+                    </button>
+                    <button onclick="showSection('quizzes')" class="nav-btn px-4 py-2 rounded-lg font-medium transition-colors text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-question-circle mr-2"></i>Quizzes
+                    </button>
+                    <button onclick="showSection('create-quiz')" class="nav-btn px-4 py-2 rounded-lg font-medium transition-colors text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-plus mr-2"></i>Create Quiz
+                    </button>
+                </nav>
+                <div class="flex items-center space-x-4">
+                    <!-- User Info -->
+                    <div id="user-info" class="hidden md:flex items-center space-x-3">
+                        <div class="text-right">
+                            <p class="text-sm font-semibold text-gray-800" id="user-email">user@example.com</p>
+                            <p class="text-xs text-gray-500">Signed in</p>
+                        </div>
+                        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                            <span class="text-white text-sm font-bold" id="user-avatar">U</span>
+                        </div>
+                    </div>
+                    <!-- Sign Out Button -->
+                    <button onclick="signOut()" class="hidden md:block px-4 py-2 text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Sign Out
+                    </button>
+                    <!-- Mobile Menu Toggle -->
+                    <div class="md:hidden">
+                        <button onclick="toggleMobileMenu()" class="text-gray-700">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="md:hidden mt-4 pb-4 border-t hidden">
+                <div class="flex flex-col space-y-2 pt-4">
+                    <button onclick="showSection('dashboard')" class="nav-btn text-left px-4 py-2 rounded-lg font-medium transition-colors bg-blue-500 text-white">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </button>
+                    <button onclick="showSection('notes')" class="nav-btn text-left px-4 py-2 rounded-lg font-medium transition-colors text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-sticky-note mr-2"></i>Notes
+                    </button>
+                    <button onclick="showSection('quizzes')" class="nav-btn text-left px-4 py-2 rounded-lg font-medium transition-colors text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-question-circle mr-2"></i>Quizzes
+                    </button>
+                    <button onclick="showSection('create-quiz')" class="nav-btn text-left px-4 py-2 rounded-lg font-medium transition-colors text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-plus mr-2"></i>Create Quiz
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section">
+            <div class="text-center mb-12">
+                <img src="FAVICON 1.jpeg" alt="Modern study workspace with laptop, books, and coffee on a clean desk with natural lighting and plants in background" class="w-full max-w-4xl mx-auto rounded-2xl shadow-2xl mb-8" />
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Welcome to SmartStudy</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Your comprehensive platform for organizing course notes and creating interactive quizzes to enhance your learning experience.</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="glass-effect rounded-xl p-6 text-center text-white">
+                    <i class="fas fa-sticky-note text-4xl mb-4 text-yellow-400"></i>
+                    <h3 class="text-xl font-bold mb-2">Total Notes</h3>
+                    <p class="text-3xl font-bold" id="total-notes">0</p>
+                </div>
+                <div class="glass-effect rounded-xl p-6 text-center text-white">
+                    <i class="fas fa-question-circle text-4xl mb-4 text-green-400"></i>
+                    <h3 class="text-xl font-bold mb-2">Total Quizzes</h3>
+                    <p class="text-3xl font-bold" id="total-quizzes">0</p>
+                </div>
+                <div class="glass-effect rounded-xl p-6 text-center text-white">
+                    <i class="fas fa-trophy text-4xl mb-4 text-yellow-500"></i>
+                    <h3 class="text-xl font-bold mb-2">Best Score</h3>
+                    <p class="text-3xl font-bold" id="best-score">0%</p>
+                </div>
+                <div class="glass-effect rounded-xl p-6 text-center text-white">
+                    <i class="fas fa-chart-line text-4xl mb-4 text-blue-400"></i>
+                    <h3 class="text-xl font-bold mb-2">Avg Score</h3>
+                    <p class="text-3xl font-bold" id="avg-score">0%</p>
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="note-card rounded-xl p-8 text-white cursor-pointer" onclick="showSection('notes')">
+                    <i class="fas fa-sticky-note text-5xl mb-4"></i>
+                    <h3 class="text-2xl font-bold mb-4">Course Notes</h3>
+                    <p class="text-lg opacity-90">Organize and manage your study materials with our intuitive note-taking system.</p>
+                    <div class="mt-6">
+                        <button class="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                            View Notes <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="quiz-card rounded-xl p-8 text-white cursor-pointer" onclick="showSection('quizzes')">
+                    <i class="fas fa-question-circle text-5xl mb-4"></i>
+                    <h3 class="text-2xl font-bold mb-4">Interactive Quizzes</h3>
+                    <p class="text-lg opacity-90">Test your knowledge with custom quizzes and track your learning progress.</p>
+                    <div class="mt-6">
+                        <button class="bg-white text-pink-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                            Take Quiz <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Notes Section -->
+        <section id="notes" class="section hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">Course Notes</h2>
+                <button onclick="showNoteModal()" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Add Note
+                </button>
+            </div>
+            
+            <div class="mb-6">
+                <div class="flex flex-wrap gap-4">
+                    <input type="text" id="search-notes" placeholder="Search notes..." class="flex-1 min-w-64 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="filter-subject" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Subjects</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="notes-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Notes will be displayed here -->
+            </div>
+        </section>
+
+        <!-- Quizzes Section -->
+        <section id="quizzes" class="section hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">Available Quizzes</h2>
+                <button onclick="showSection('create-quiz')" class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Create New Quiz
+                </button>
+            </div>
+            
+            <div id="quizzes-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Quizzes will be displayed here -->
+            </div>
+        </section>
+
+        <!-- Create Quiz Section -->
+        <section id="create-quiz" class="section hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8">Create New Quiz</h2>
+            
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Quiz Title</label>
+                        <input type="text" id="quiz-title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter quiz title">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Subject</label>
+                        <input type="text" id="quiz-subject" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter subject">
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-2">Description</label>
+                    <textarea id="quiz-description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter quiz description"></textarea>
+                </div>
+                
+                <div id="questions-container" class="space-y-6">
+                    <!-- Questions will be added here -->
+                </div>
+                
+                <div class="flex gap-4 mt-8">
+                    <button onclick="addQuestion()" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Add Question
+                    </button>
+                    <button onclick="saveQuiz()" class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors">
+                        <i class="fas fa-save mr-2"></i>Save Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Take Quiz Section -->
+        <section id="take-quiz" class="section hidden">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="current-quiz-title" class="text-3xl font-bold text-gray-800"></h2>
+                        <button onclick="showSection('quizzes')" class="text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>Progress</span>
+                            <span id="quiz-progress">0/0</span>
+                        </div>
+                        <div class="bg-gray-200 rounded-full h-2">
+                            <div id="progress-bar" class="progress-bar bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="quiz-content">
+                        <!-- Quiz questions will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quiz Results Section -->
+        <section id="quiz-results" class="section hidden">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+                    <div class="mb-8">
+                        <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/2f969047-2684-478b-8436-5ea46e0cae8b.png" alt="Celebration trophy icon with confetti and stars on gradient background representing achievement and success" class="w-32 h-32 mx-auto mb-6 rounded-full" />
+                        <h2 class="text-3xl font-bold text-gray-800 mb-4">Quiz Complete!</h2>
+                        <div class="text-6xl font-bold mb-4" id="final-score">0%</div>
+                        <p class="text-xl text-gray-600" id="score-message"></p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-green-100 rounded-lg p-4">
+                            <div class="text-2xl font-bold text-green-600" id="correct-answers">0</div>
+                            <div class="text-green-700">Correct</div>
+                        </div>
+                        <div class="bg-red-100 rounded-lg p-4">
+                            <div class="text-2xl font-bold text-red-600" id="incorrect-answers">0</div>
+                            <div class="text-red-700">Incorrect</div>
+                        </div>
+                        <div class="bg-blue-100 rounded-lg p-4">
+                            <div class="text-2xl font-bold text-blue-600" id="total-questions">0</div>
+                            <div class="text-blue-700">Total</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-center gap-4">
+                        <button onclick="retakeQuiz()" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-redo mr-2"></i>Retake Quiz
+                        </button>
+                        <button onclick="showSection('quizzes')" class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-list mr-2"></i>Back to Quizzes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Note Modal -->
+    <div id="note-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800" id="note-modal-title">Add New Note</h3>
+                    <button onclick="closeNoteModal()" class="text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+                
+                <form id="note-form" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Title</label>
+                        <input type="text" id="note-title" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter note title">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Subject</label>
+                        <input type="text" id="note-subject" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter subject">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Content</label>
+                        <textarea id="note-content" required rows="10" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your notes here..."></textarea>
+                    </div>
+                    
+                    <div class="flex gap-4 pt-4">
+                        <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-save mr-2"></i>Save Note
+                        </button>
+                        <button type="button" onclick="closeNoteModal()" class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Authentication check - must be first
+        function checkAuthentication() {
+            const userData = localStorage.getItem('smartstudy-user');
+            if (!userData) {
+                window.location.href = "registration.html";
+                return false;
+            }
+            
+            try {
+                const user = JSON.parse(userData);
+                // Display user info in header
+                displayUserInfo(user);
+                return true;
+            } catch (error) {
+                console.error('Invalid user data:', error);
+                localStorage.removeItem('smartstudy-user');
+                window.location.href = "registration.html";
+                return false;
+            }
+        }
+
+        // Check authentication immediately
+        if (!checkAuthentication()) {
+            // Stop script execution if not authenticated
+            throw new Error('Authentication required');
+        }
+
+        // Global variables
+        let notes = JSON.parse(localStorage.getItem('smartstudy-notes')) || [];
+        let quizzes = JSON.parse(localStorage.getItem('smartstudy-quizzes')) || [];
+        let quizResults = JSON.parse(localStorage.getItem('smartstudy-results')) || [];
+        let currentQuiz = null;
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let editingNoteId = null;
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDashboardStats();
+            displayNotes();
+            displayQuizzes();
+            updateSubjectFilter();
+            
+            // Add event listeners
+            document.getElementById('search-notes').addEventListener('input', filterNotes);
+            document.getElementById('filter-subject').addEventListener('change', filterNotes);
+            document.getElementById('note-form').addEventListener('submit', saveNote);
+        });
+
+        // Navigation functions
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.remove('hidden');
+            document.getElementById(sectionId).classList.add('fade-in');
+            
+            // Update navigation buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-500', 'text-white');
+                btn.classList.add('text-gray-700', 'hover:bg-gray-100');
+            });
+            
+            // Highlight active nav button
+            event.target.classList.remove('text-gray-700', 'hover:bg-gray-100');
+            event.target.classList.add('bg-blue-500', 'text-white');
+            
+            // Close mobile menu if open
+            document.getElementById('mobile-menu').classList.add('hidden');
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        // Dashboard functions
+        function updateDashboardStats() {
+            document.getElementById('total-notes').textContent = notes.length;
+            document.getElementById('total-quizzes').textContent = quizzes.length;
+            
+            if (quizResults.length > 0) {
+                const scores = quizResults.map(result => result.score);
+                const bestScore = Math.max(...scores);
+                const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+                
+                document.getElementById('best-score').textContent = bestScore + '%';
+                document.getElementById('avg-score').textContent = Math.round(avgScore) + '%';
+            } else {
+                document.getElementById('best-score').textContent = '0%';
+                document.getElementById('avg-score').textContent = '0%';
+            }
+        }
+
+        // Notes functions
+        function showNoteModal(noteId = null) {
+            editingNoteId = noteId;
+            const modal = document.getElementById('note-modal');
+            const form = document.getElementById('note-form');
+            
+            if (noteId) {
+                const note = notes.find(n => n.id === noteId);
+                document.getElementById('note-modal-title').textContent = 'Edit Note';
+                document.getElementById('note-title').value = note.title;
+                document.getElementById('note-subject').value = note.subject;
+                document.getElementById('note-content').value = note.content;
+            } else {
+                document.getElementById('note-modal-title').textContent = 'Add New Note';
+                form.reset();
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeNoteModal() {
+            document.getElementById('note-modal').classList.add('hidden');
+            editingNoteId = null;
+        }
+
+        function saveNote(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('note-title').value;
+            const subject = document.getElementById('note-subject').value;
+            const content = document.getElementById('note-content').value;
+            
+            if (editingNoteId) {
+                // Update existing note
+                const noteIndex = notes.findIndex(n => n.id === editingNoteId);
+                notes[noteIndex] = {
+                    ...notes[noteIndex],
+                    title,
+                    subject,
+                    content,
+                    updatedAt: new Date().toISOString()
+                };
+            } else {
+                // Create new note
+                const note = {
+                    id: Date.now().toString(),
+                    title,
+                    subject,
+                    content,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                notes.push(note);
+            }
+            
+            localStorage.setItem('smartstudy-notes', JSON.stringify(notes));
+            closeNoteModal();
+            displayNotes();
+            updateDashboardStats();
+            updateSubjectFilter();
+        }
+
+        function deleteNote(noteId) {
+            if (confirm('Are you sure you want to delete this note?')) {
+                notes = notes.filter(note => note.id !== noteId);
+                localStorage.setItem('smartstudy-notes', JSON.stringify(notes));
+                displayNotes();
+                updateDashboardStats();
+                updateSubjectFilter();
+            }
+        }
+
+        function displayNotes() {
+            const container = document.getElementById('notes-container');
+            
+            if (notes.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-sticky-note text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-600 mb-2">No notes yet</h3>
+                        <p class="text-gray-500 mb-6">Start by creating your first note to organize your study materials.</p>
+                        <button onclick="showNoteModal()" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Create First Note
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = notes.map(note => `
+                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-bold text-gray-800 truncate">${note.title}</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="showNoteModal('${note.id}')" class="text-blue-500 hover:text-blue-700">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteNote('${note.id}')" class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full inline-block mb-3">
+                        ${note.subject}
+                    </div>
+                    <p class="text-gray-600 text-sm line-clamp-3 mb-4">${note.content.substring(0, 150)}${note.content.length > 150 ? '...' : ''}</p>
+                    <div class="text-xs text-gray-500">
+                        Updated: ${new Date(note.updatedAt).toLocaleDateString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterNotes() {
+            const searchTerm = document.getElementById('search-notes').value.toLowerCase();
+            const selectedSubject = document.getElementById('filter-subject').value;
+            
+            let filteredNotes = notes;
+            
+            if (searchTerm) {
+                filteredNotes = filteredNotes.filter(note => 
+                    note.title.toLowerCase().includes(searchTerm) ||
+                    note.content.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (selectedSubject) {
+                filteredNotes = filteredNotes.filter(note => note.subject === selectedSubject);
+            }
+            
+            const container = document.getElementById('notes-container');
+            container.innerHTML = filteredNotes.map(note => `
+                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-bold text-gray-800 truncate">${note.title}</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="showNoteModal('${note.id}')" class="text-blue-500 hover:text-blue-700">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteNote('${note.id}')" class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full inline-block mb-3">
+                        ${note.subject}
+                    </div>
+                    <p class="text-gray-600 text-sm line-clamp-3 mb-4">${note.content.substring(0, 150)}${note.content.length > 150 ? '...' : ''}</p>
+                    <div class="text-xs text-gray-500">
+                        Updated: ${new Date(note.updatedAt).toLocaleDateString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateSubjectFilter() {
+            const subjects = [...new Set(notes.map(note => note.subject))];
+            const select = document.getElementById('filter-subject');
+            
+            select.innerHTML = '<option value="">All Subjects</option>' +
+                subjects.map(subject => `<option value="${subject}">${subject}</option>`).join('');
+        }
+
+        // Quiz functions
+        function addQuestion() {
+            const container = document.getElementById('questions-container');
+            const questionIndex = container.children.length;
+            
+            const questionHtml = `
+                <div class="question-item border border-gray-300 rounded-lg p-6 bg-gray-50">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-semibold text-gray-800">Question ${questionIndex + 1}</h4>
+                        <button onclick="removeQuestion(this)" class="text-red-500 hover:text-red-700">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">Question</label>
+                        <input type="text" class="question-text w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter question">
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Option A</label>
+                            <input type="text" class="option-a w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Option A">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Option B</label>
+                            <input type="text" class="option-b w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Option B">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Option C</label>
+                            <input type="text" class="option-c w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Option C">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Option D</label>
+                            <input type="text" class="option-d w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Option D">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Correct Answer</label>
+                        <select class="correct-answer w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="A">Option A</option>
+                            <option value="B">Option B</option>
+                            <option value="C">Option C</option>
+                            <option value="D">Option D</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', questionHtml);
+        }
+
+        function removeQuestion(button) {
+            button.closest('.question-item').remove();
+            updateQuestionNumbers();
+        }
+
+        function updateQuestionNumbers() {
+            const questions = document.querySelectorAll('.question-item');
+            questions.forEach((question, index) => {
+                question.querySelector('h4').textContent = `Question ${index + 1}`;
+            });
+        }
+
+        function saveQuiz() {
+            const title = document.getElementById('quiz-title').value;
+            const subject = document.getElementById('quiz-subject').value;
+            const description = document.getElementById('quiz-description').value;
+            
+            if (!title || !subject) {
+                alert('Please fill in the quiz title and subject.');
+                return;
+            }
+            
+            const questions = [];
+            const questionItems = document.querySelectorAll('.question-item');
+            
+            for (let item of questionItems) {
+                const questionText = item.querySelector('.question-text').value;
+                const optionA = item.querySelector('.option-a').value;
+                const optionB = item.querySelector('.option-b').value;
+                const optionC = item.querySelector('.option-c').value;
+                const optionD = item.querySelector('.option-d').value;
+                const correctAnswer = item.querySelector('.correct-answer').value;
+                
+                if (!questionText || !optionA || !optionB || !optionC || !optionD) {
+                    alert('Please fill in all question fields.');
+                    return;
+                }
+                
+                questions.push({
+                    question: questionText,
+                    options: {
+                        A: optionA,
+                        B: optionB,
+                        C: optionC,
+                        D: optionD
+                    },
+                    correct: correctAnswer
+                });
+            }
+            
+            if (questions.length === 0) {
+                alert('Please add at least one question.');
+                return;
+            }
+            
+            const quiz = {
+                id: Date.now().toString(),
+                title,
+                subject,
+                description,
+                questions,
+                createdAt: new Date().toISOString()
+            };
+            
+            quizzes.push(quiz);
+            localStorage.setItem('smartstudy-quizzes', JSON.stringify(quizzes));
+            
+            // Clear form
+            document.getElementById('quiz-title').value = '';
+            document.getElementById('quiz-subject').value = '';
+            document.getElementById('quiz-description').value = '';
+            document.getElementById('questions-container').innerHTML = '';
+            
+            displayQuizzes();
+            updateDashboardStats();
+            alert('Quiz saved successfully!');
+        }
+
+        function displayQuizzes() {
+            const container = document.getElementById('quizzes-container');
+            
+            if (quizzes.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-question-circle text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-600 mb-2">No quizzes available</h3>
+                        <p class="text-gray-500 mb-6">Create your first quiz to start testing your knowledge.</p>
+                        <button onclick="showSection('create-quiz')" class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Create First Quiz
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = quizzes.map(quiz => `
+                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">${quiz.title}</h3>
+                        <button onclick="deleteQuiz('${quiz.id}')" class="text-red-500 hover:text-red-700">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full inline-block mb-3">
+                        ${quiz.subject}
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">${quiz.description}</p>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-sm text-gray-500">${quiz.questions.length} questions</span>
+                        <span class="text-xs text-gray-500">Created: ${new Date(quiz.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <button onclick="startQuiz('${quiz.id}')" class="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-play mr-2"></i>Take Quiz
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function deleteQuiz(quizId) {
+            if (confirm('Are you sure you want to delete this quiz?')) {
+                quizzes = quizzes.filter(quiz => quiz.id !== quizId);
+                localStorage.setItem('smartstudy-quizzes', JSON.stringify(quizzes));
+                displayQuizzes();
+                updateDashboardStats();
+            }
+        }
+
+        function startQuiz(quizId) {
+            currentQuiz = quizzes.find(quiz => quiz.id === quizId);
+            currentQuestionIndex = 0;
+            userAnswers = [];
+            
+            document.getElementById('current-quiz-title').textContent = currentQuiz.title;
+            showSection('take-quiz');
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const question = currentQuiz.questions[currentQuestionIndex];
+            const progress = ((currentQuestionIndex + 1) / currentQuiz.questions.length) * 100;
+            
+            document.getElementById('quiz-progress').textContent = `${currentQuestionIndex + 1}/${currentQuiz.questions.length}`;
+            document.getElementById('progress-bar').style.width = progress + '%';
+            
+            const content = document.getElementById('quiz-content');
+            content.innerHTML = `
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">Question ${currentQuestionIndex + 1}</h3>
+                    <p class="text-lg text-gray-700 mb-6">${question.question}</p>
+                    
+                    <div class="space-y-3">
+                        ${Object.entries(question.options).map(([key, value]) => `
+                            <button onclick="selectAnswer('${key}')" class="quiz-option w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 focus:outline-none">
+                                <span class="font-semibold text-blue-600 mr-3">${key}.</span>
+                                <span class="text-gray-800">${value}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="flex justify-between mt-8">
+                        <button onclick="previousQuestion()" ${currentQuestionIndex === 0 ? 'disabled' : ''} class="px-6 py-3 rounded-lg font-semibold transition-colors ${currentQuestionIndex === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gray-500 text-white hover:bg-gray-600'}">
+                            <i class="fas fa-arrow-left mr-2"></i>Previous
+                        </button>
+                        <button id="next-btn" onclick="nextQuestion()" disabled class="px-6 py-3 bg-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed">
+                            ${currentQuestionIndex === currentQuiz.questions.length - 1 ? 'Finish Quiz' : 'Next'} <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectAnswer(answer) {
+            // Remove previous selection
+            document.querySelectorAll('.quiz-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selection to clicked option
+            event.target.closest('.quiz-option').classList.add('selected');
+            
+            // Store answer
+            userAnswers[currentQuestionIndex] = answer;
+            
+            // Enable next button
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+            nextBtn.classList.add('bg-blue-500', 'text-white', 'hover:bg-blue-600');
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < currentQuiz.questions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        }
+
+        function finishQuiz() {
+            let correctCount = 0;
+            
+            currentQuiz.questions.forEach((question, index) => {
+                if (userAnswers[index] === question.correct) {
+                    correctCount++;
+                }
+            });
+            
+            const score = Math.round((correctCount / currentQuiz.questions.length) * 100);
+            
+            // Save result
+            const result = {
+                quizId: currentQuiz.id,
+                quizTitle: currentQuiz.title,
+                score: score,
+                correctAnswers: correctCount,
+                totalQuestions: currentQuiz.questions.length,
+                completedAt: new Date().toISOString()
+            };
+            
+            quizResults.push(result);
+            localStorage.setItem('smartstudy-results', JSON.stringify(quizResults));
+            
+            // Display results
+            showQuizResults(score, correctCount, currentQuiz.questions.length);
+        }
+
+        function showQuizResults(score, correct, total) {
+            document.getElementById('final-score').textContent = score + '%';
+            document.getElementById('correct-answers').textContent = correct;
+            document.getElementById('incorrect-answers').textContent = total - correct;
+            document.getElementById('total-questions').textContent = total;
+            
+            let message = '';
+            if (score >= 90) {
+                message = 'Excellent work! You have mastered this topic.';
+            } else if (score >= 80) {
+                message = 'Great job! You have a good understanding.';
+            } else if (score >= 70) {
+                message = 'Good effort! Keep studying to improve.';
+            } else if (score >= 60) {
+                message = 'Not bad, but there\'s room for improvement.';
+            } else {
+                message = 'Keep studying and try again. You can do it!';
+            }
+            
+            document.getElementById('score-message').textContent = message;
+            
+            showSection('quiz-results');
+            updateDashboardStats();
+        }
+
+        function retakeQuiz() {
+            startQuiz(currentQuiz.id);
+        }
+
+        // Authentication functions
+        function displayUserInfo(user) {
+            const userEmail = document.getElementById('user-email');
+            const userAvatar = document.getElementById('user-avatar');
+            const userInfo = document.getElementById('user-info');
+            
+            if (userEmail && userAvatar && userInfo) {
+                userEmail.textContent = user.email;
+                userAvatar.textContent = user.email.charAt(0).toUpperCase();
+                userInfo.classList.remove('hidden');
+            }
+        }
+
+        function signOut() {
+            if (confirm('Are you sure you want to sign out?')) {
+                // Clear user session
+                localStorage.removeItem('smartstudy-user');
+                
+                // Optionally clear user-specific data (uncomment if needed)
+                // localStorage.removeItem('smartstudy-notes');
+                // localStorage.removeItem('smartstudy-quizzes');
+                // localStorage.removeItem('smartstudy-results');
+                
+                // Redirect to sign-in page
+                window.location.href = "registration.html";
+            }
+        }
+
+        // Initialize with a sample question when creating quiz
+        window.addEventListener('load', function() {
+            if (quizzes.length === 0) {
+                // Add sample quiz for demonstration
+                const sampleQuiz = {
+                    id: 'sample-1',
+                    title: 'Basic Mathematics',
+                    subject: 'Mathematics',
+                    description: 'Test your basic mathematical skills',
+                    questions: [
+                        {
+                            question: 'What is 2 + 2?',
+                            options: {
+                                A: '3',
+                                B: '4',
+                                C: '5',
+                                D: '6'
+                            },
+                            correct: 'B'
+                        },
+                        {
+                            question: 'What is 10 × 5?',
+                            options: {
+                                A: '45',
+                                B: '50',
+                                C: '55',
+                                D: '60'
+                            },
+                            correct: 'B'
+                        }
+                    ],
+                    createdAt: new Date().toISOString()
+                };
+                
+                quizzes.push(sampleQuiz);
+                localStorage.setItem('smartstudy-quizzes', JSON.stringify(quizzes));
+                displayQuizzes();
+            }
+            
+            if (notes.length === 0) {
+                // Add sample note for demonstration
+                const sampleNote = {
+                    id: 'note-1',
+                    title: 'Introduction to JavaScript',
+                    subject: 'Programming',
+                    content: 'JavaScript is a high-level, interpreted programming language that conforms to the ECMAScript specification. It is a programming language that is characterized as dynamic, weakly typed, prototype-based and multi-paradigm.\n\nKey features of JavaScript:\n1. Dynamic typing\n2. First-class functions\n3. Prototype-based object orientation\n4. Event-driven programming\n\nJavaScript is commonly used for:\n- Web development (client-side)\n- Server-side development (Node.js)\n- Mobile app development\n- Desktop applications',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                notes.push(sampleNote);
+                localStorage.setItem('smartstudy-notes', JSON.stringify(notes));
+                displayNotes();
+                updateSubjectFilter();
+            }
+            
+            updateDashboardStats();
+        });
+    </script>
+</body>
+</html>
+
